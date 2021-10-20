@@ -1,7 +1,21 @@
 package com.gildedrose;
 
+import java.util.Arrays;
+import java.util.List;
+
 class GildedRose {
+
     Item[] items;
+    public static final int MAX_QUALITY = 50;
+    public static final int SULFURAS_QUALITY = 80;
+    public static final String AGED_BRIE_NAME = "Aged Brie";
+    public static final String BACKSTAGE_PASS_NAME = "Backstage passes to a TAFKAL80ETC concert";
+    public static final String SULFURAS_NAME = "Sulfuras, Hand of Ragnaros";
+    public static final String CONJURED_BASE_NAME = "Conjured";
+    protected static final List<String> SPECIAL_ITEMS_LIST = Arrays.asList(
+        GildedRose.AGED_BRIE_NAME,
+        GildedRose.BACKSTAGE_PASS_NAME,
+        GildedRose.SULFURAS_NAME);
 
     public GildedRose(Item[] items) {
         this.items = items;
@@ -9,54 +23,66 @@ class GildedRose {
 
     public void updateQuality() {
         for (int i = 0; i < items.length; i++) {
-            if (!items[i].name.equals("Aged Brie")
-                    && !items[i].name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-                if (items[i].quality > 0) {
-                    if (!items[i].name.equals("Sulfuras, Hand of Ragnaros")) {
-                        items[i].quality = items[i].quality - 1;
-                    }
+            items[i] = quality(items[i]);
+            items[i] = sellIn(items[i]);
+        }
+    }
+
+    private Item quality(Item item) {
+        if (!GildedRose.SPECIAL_ITEMS_LIST.contains(item.getName())) {
+            decrementRegularItem(item);
+        } else if (!item.getName().equals(GildedRose.SULFURAS_NAME)) {
+            incrementQuality(item);
+            if (item.getName().equals(GildedRose.BACKSTAGE_PASS_NAME)) {
+                if (item.getSellIn() < 11) {
+                    incrementQuality(item);
                 }
-            } else {
-                if (items[i].quality < 50) {
-                    items[i].quality = items[i].quality + 1;
 
-                    if (items[i].name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-                        if (items[i].sellIn < 11) {
-                            if (items[i].quality < 50) {
-                                items[i].quality = items[i].quality + 1;
-                            }
-                        }
-
-                        if (items[i].sellIn < 6) {
-                            if (items[i].quality < 50) {
-                                items[i].quality = items[i].quality + 1;
-                            }
-                        }
-                    }
+                if (item.getSellIn() < 6) {
+                    incrementQuality(item);
                 }
             }
+        }
 
-            if (!items[i].name.equals("Sulfuras, Hand of Ragnaros")) {
-                items[i].sellIn = items[i].sellIn - 1;
-            }
+        return item;
+    }
 
-            if (items[i].sellIn < 0) {
-                if (!items[i].name.equals("Aged Brie")) {
-                    if (!items[i].name.equals("Backstage passes to a TAFKAL80ETC concert")) {
-                        if (items[i].quality > 0) {
-                            if (!items[i].name.equals("Sulfuras, Hand of Ragnaros")) {
-                                items[i].quality = items[i].quality - 1;
-                            }
-                        }
-                    } else {
-                        items[i].quality = items[i].quality - items[i].quality;
-                    }
-                } else {
-                    if (items[i].quality < 50) {
-                        items[i].quality = items[i].quality + 1;
-                    }
-                }
+    private void decrementQuality(Item item) {
+        if (item.getQuality() > 0) {
+            item.decrementQuality();
+        }
+    }
+
+    private void incrementQuality(Item item) {
+        if (item.getQuality() < GildedRose.MAX_QUALITY) {
+            item.incrementQuality();
+        }
+    }
+
+    private Item sellIn(Item item) {
+        if (!item.getName().equals(GildedRose.SULFURAS_NAME)) {
+            item.decrementSellIn();
+        }
+
+        // quality changes based on sellIn
+        if (item.getSellIn() < 0) {
+            if (!GildedRose.SPECIAL_ITEMS_LIST.contains(item.getName())) {
+                decrementRegularItem(item);
+            } else if (item.getName().equals(GildedRose.AGED_BRIE_NAME)) {
+                item.incrementQuality();
+            } else if (item.getName().equals(GildedRose.BACKSTAGE_PASS_NAME)) {
+                item.setQuality(0);
             }
+        } else if (item.getSellIn() == 0 && item.getName().equals(GildedRose.BACKSTAGE_PASS_NAME)) {
+            item.setQuality(0);
+        }
+        return item;
+    }
+
+    private void decrementRegularItem(Item item) {
+        decrementQuality(item);
+        if (item.getName().contains(GildedRose.CONJURED_BASE_NAME)) {
+            decrementQuality(item);
         }
     }
 }
